@@ -528,6 +528,32 @@
 
       appendStream();
       let full = '';
+      let smoothBuf = '';
+      let smoothFull = '';
+      let smoothTimer = null;
+      let streamDone = false;
+
+      function flushSmooth() {
+        if (smoothBuf.length > 0) {
+          const c = smoothBuf[0];
+          smoothBuf = smoothBuf.slice(1);
+          smoothFull += c;
+          updateStream(smoothFull);
+        }
+        if (smoothBuf.length === 0 && streamDone) {
+          if (smoothTimer) { clearInterval(smoothTimer); smoothTimer = null; }
+          if (smoothFull) {
+            S.messages.push({ role: 'assistant', content: smoothFull });
+            finishStream(smoothFull);
+            updateConv();
+          } else { removeStream(); }
+          S.streaming = false;
+          S.abort = null;
+          snd.textContent = '→';
+          if (!txt.value.trim()) snd.classList.remove('a');
+          txt.focus();
+        }
+      }
 
       try {
         const ctrl = new AbortController();
@@ -552,7 +578,8 @@
         const dec = new TextDecoder();
         let buf = '';
         let err = null;
-        let streamDone = false;
+
+        smoothTimer = setInterval(flushSmooth, 30);
 
         while (true) {
           const { done, value } = await reader.read();
@@ -575,7 +602,7 @@
               } else {
                 try {
                   const d = JSON.parse(ds);
-                  if (d.content) { full += d.content; updateStream(full); }
+                  if (d.content) { full += d.content; smoothBuf += d.content; }
                 } catch {}
               }
               ev = '';
@@ -584,19 +611,12 @@
           if (err || streamDone) break;
         }
         if (err) throw new Error(err);
-
-        if (full) {
-          S.messages.push({ role: 'assistant', content: full });
-          finishStream(full);
-          updateConv();
-        } else {
-          removeStream();
-        }
+        if (!full) removeStream();
 
       } catch (e) {
+        if (smoothTimer) { clearInterval(smoothTimer); smoothTimer = null; }
         if (e.name === 'AbortError') removeStream();
         else showError(e.message);
-      } finally {
         S.streaming = false;
         S.abort = null;
         snd.textContent = '→';
