@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-//  NEXUS — Open-source AI Chatbot
+//  ZORA — Open-source AI Chatbot
 //  Chat (text) + Image generation (via Free.ai)
 // ═══════════════════════════════════════════════════════════════
 const express = require('express');
@@ -189,7 +189,7 @@ app.get('/api/status', async (req, res) => {
   if (models.length === 0) models.push(...MODELS.ollama);
 
   res.json({
-    name: 'Nexus',
+    name: 'Zora',
     provider: CFG.provider,
     model: CFG.model,
     models,
@@ -436,7 +436,7 @@ app.use((err, req, res, next) => {
 async function start() {
   console.log('');
   console.log('  ╔══════════════════════════════════════╗');
-  console.log('  ║   ◆  NEXUS — AI Chatbot              ║');
+  console.log('  ║   ◆  ZORA — AI Chatbot              ║');
   console.log('  ║   Open-source · Private · Free       ║');
   console.log('  ╚══════════════════════════════════════╝');
   console.log('');
